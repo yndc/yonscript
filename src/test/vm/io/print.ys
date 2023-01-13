@@ -1,0 +1,4 @@
+IO.Print("test")
+
+n: 10
+IO.Print("a number: {n}")
