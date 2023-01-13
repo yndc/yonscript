@@ -1,0 +1,18 @@
+{
+    "files.associations": {
+        "chrono": "cpp",
+        "vector": "cpp",
+        "system_error": "cpp",
+        "array": "cpp",
+        "deque": "cpp",
+        "string": "cpp",
+        "iterator": "cpp",
+        "string_view": "cpp",
+        "cstdlib": "cpp",
+        "*.tcc": "cpp",
+        "numeric": "cpp",
+        "ostream": "cpp",
+        "sstream": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "enabledIfIncludesResolve"
+}

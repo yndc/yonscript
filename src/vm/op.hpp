@@ -1,8 +1,5 @@
-#ifndef op_h
-#define op_h
+#pragma once
 
 typedef enum {
     OP_RETURN,
 } OPCode;
-
-#endif
