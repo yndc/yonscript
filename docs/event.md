@@ -2,6 +2,49 @@
 
 Yonscript has a built-in event system for writing event handlers flexibly and efficiently. 
 
+## Definition 
+
+Events can be defined with `define event` keyword:
+
+```
+define event <event name> {
+    <key>: <type>
+    ...
+}
+```
+
+### Attributes 
+
+#### (optional) `delivery`
+ 
+Type: `enum: ExactlyOnce | AtMostOnce`
+
+Default: `ExactlyOnce`
+
+Enforce the delivery guarantee of the event. 
+
+`ExactlyOnce` guarantees that the event will be delivered* to all of the recipients exactly once. This is the most expensive option as the event packet will have to be supplied with event identifiers and the engine will need to check for duplicates. Acknowledgements from the recipients is also required. Recomended for important events where a exactly-once semantics is necessary.
+
+`AtMostOnce` guarantees that the event will be delivered to all of the recipients at most once. The publisher will publish the event once, if for some reason an event fails to be recieved by a consumer, the event won't be processed by that consumer. This is the fastest option as there is no additional event metadata associated in the event packet and no acknowledgement mechanism is necessary. 
+
+*The event packet itself does not have an exactly-once guarantee. The engine will deduplicate the events before forwarding them to the engine.
+
+#### (optional) `order`
+
+Type: `EventOrder`
+
+Enforce ordering of the events. Event data will be supplied with a sequential order number, the engine will buffer the received event `n` until it has processed the `(n-1)` event. When using an order guarantee, the `delivery` attribute must be `ExactlyOnce`.
+
+`EventOrder` is a special reference type that is used for differentiating event orders. The engine will enforce ordering of all events with the same `EventOrder` reference. Events with the same `EventOrder` reference will be guaranteed to be processed in order as they were emitted. 
+
+There is two built-in `EventOrder`:
+
+- `Global` enforces a global ordering of the event regardless of the type. All events under the `Global` order will be processed sequentially.
+
+- `Type` enforces ordering of the same event type.
+
+Event ordering might be essential in some scenarios, especially when an event depends on another event before it. However event ordering introduces a hefty performance penalty, as events in the same `EventOrder` cannot be processed in a concurrent manner. Therefore it is wise to use event ordering sparingly, only on monumental events where ordering matters.
+
 ## Hooks
 
 An event handler is a function that is executed when an event is being emitted. Event handlers cannot change the event data itself, and by default they are run in parallel. So if there are 20 handlers for a specific event, 20 of them will be run in parallel when the specific event is emitted. 

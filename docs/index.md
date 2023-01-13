@@ -2,7 +2,7 @@
 
 Yonscript is a simple strongly-typed markup and scripting language designed for defining game resource data and logic. 
 
-Yonscript code is interpreted by the Yonscript virtual machine written in *TODO: language*.
+Yonscript code is interpreted by the Yonscript virtual machine written in C++.
 
 ## Goal
 
