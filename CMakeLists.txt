@@ -19,6 +19,7 @@ endfunction()
 
 # Dependencies
 FetchContent_GitHub(fmt fmtlib/fmt 9.1.0)
+# FetchContent_GitHub(googletest google/googletest v1.12.1)
 
 list(APPEND EXTERNAL_LIBS fmt)
 
@@ -27,8 +28,5 @@ project(yoncli VERSION 0.1.0)
 add_executable(yoncli src/exec/yoncli/main.cpp ${SOURCES})
 set_target_properties(yoncli PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
 target_link_libraries(yoncli PUBLIC ${EXTERNAL_LIBS})
-target_include_directories(yoncli PUBLIC 
-    src
-    ${PROJECT_BINARY_DIR}
-)
+target_include_directories(yoncli PUBLIC src)
 

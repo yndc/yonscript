@@ -22,7 +22,7 @@ int main(int argc, const char *argv[])
     c->write_instruction(OP_RETURN, source_pos(5, 23));
 
     vm v;
-    interpret_result r = v.interpret(c);
+    interpret_result r = v.execute(c);
 
     std::cout << r;
 

@@ -6,7 +6,7 @@
 #define READ_NEXT_BYTE() (*ip++)
 #define READ_NEXT_FLOAT() c->floats[READ_NEXT_BYTE()]
 
-interpret_result vm::interpret(chunk *c)
+interpret_result vm::execute(chunk *c)
 {
     uint8_t *ip = &c->code[0];
     static const void *ops[] = {

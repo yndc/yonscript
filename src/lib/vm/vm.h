@@ -2,6 +2,8 @@
 
 #include "chunk.h"
 
+#define STACK_MAX 256
+
 /**
  * Interpretation result returned by a VM instance after running a chunk
  */
@@ -17,6 +19,12 @@ typedef enum
  */
 class vm
 {
+  float float_stack[STACK_MAX];
+
 public:
-  interpret_result interpret(chunk *c);
+  /**
+   * Execute the given chunk of code
+   * @param c chunk of code
+   */
+  interpret_result execute(chunk *c);
 };
