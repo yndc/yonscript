@@ -8,8 +8,8 @@ from typing import List, Any, Optional, TextIO, Tuple
 
 def run(*args: str, msg: Optional[str] = None, verbose: bool = False, **kwargs: Any) -> subprocess.Popen:
     sys.stdout.flush()
-    # if verbose:
-    print(f"$ {' '.join(args)}")
+    if verbose:
+        print(f"$ {' '.join(args)}")
 
     p = subprocess.Popen(args, **kwargs)
     code = p.wait()
@@ -31,19 +31,34 @@ def err(msg: str):
     print(f"ERROR: {msg}")
     exit(1)
 
-def build(debug: bool, release: bool) -> None:
-    if debug == True and release == True:
-        err("both --debug and --release cannot be used at the same time")
+def build(debug: bool, release: bool, **kwargs: Any) -> None:
     if debug == False and release == False:
         err("please specify --debug or --release")
-
-    basedir = pathlib.Path(__file__).parent.absolute()
+    
     cmake = find_command("cmake", msg="CMake is required")
+    cmake_options = ["-H.", "-Bbuild"]
 
-    run(cmake, str(basedir), cwd=dir)
+    if debug:
+        build_cmake(cmake, "debug", "-DCMAKE_BUILD_TYPE=Debug", **kwargs)
+    if release:
+        build_cmake(cmake, "release", "-DCMAKE_BUILD_TYPE=RelWithDebInfo", **kwargs)
+
+def build_cmake(cmake: str, buildpath: str, args: str, **kwargs: Any) -> None:
+    basedir = pathlib.Path(__file__).parent.absolute()
+    buildpath = f"build/{buildpath}"
+    cmake_options = ["-H.", f"-B{buildpath}", args]
+    run(cmake, str(basedir), *cmake_options, **kwargs)
+
+    cmake_options = ["--build", buildpath]
+    run(cmake, *cmake_options, **kwargs)
+
+def parse_global_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("-v", "--verbose", default=False, action='store_true')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+
+
     subparsers = parser.add_subparsers()
 
     # build sub-menu
@@ -56,8 +71,8 @@ if __name__ == '__main__':
     parser_build.set_defaults(func=build)
     parser_build.add_argument('-d', '--debug', default=False, action='store_true')
     parser_build.add_argument('-r', '--release', default=False, action='store_true')
+    parse_global_args(parser_build)
     args = parser.parse_args()
     arg_dict = dict(vars(args))
     del arg_dict['func']
-    print(arg_dict)
     args.func(**arg_dict)
