@@ -1,6 +1,5 @@
-#include "common.hpp"
-#include "vm.hpp"
-#include "chunk.hpp"
+#include "vm.h"
+#include "chunk.h"
 #include <iostream>
 
 int main(int argc, const char* argv[]) {

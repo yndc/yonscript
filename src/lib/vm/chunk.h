@@ -1,8 +1,8 @@
 #pragma once
 
 #include <vector>
-#include "common.hpp"
-#include "op.hpp"
+#include "common.h"
+#include "op.h"
 
 class chunk
 {
