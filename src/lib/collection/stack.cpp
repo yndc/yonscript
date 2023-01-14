@@ -26,3 +26,9 @@ T fixed_stack<T, N>::peek()
 {
     return this->data[this->top - 1];
 }
+
+template <typename T, unsigned int N>
+T fixed_stack<T, N>::operator[](unsigned int index)
+{
+    return this->data[index];
+}

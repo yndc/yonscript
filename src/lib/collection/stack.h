@@ -12,4 +12,5 @@ public:
     unsigned int push(T item);
     T pop();
     T peek();
+    T operator[](unsigned int index);
 };

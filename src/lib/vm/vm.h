@@ -1,5 +1,6 @@
 #pragma once
 
+#include "lib/collection/stack.h"
 #include "chunk.h"
 
 #define STACK_MAX 256
@@ -19,7 +20,7 @@ typedef enum
  */
 class vm
 {
-  float float_stack[STACK_MAX];
+  fixed_stack<float, STACK_MAX> float_stack;
 
 public:
   /**
