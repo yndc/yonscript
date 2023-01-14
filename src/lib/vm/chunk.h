@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "common.h"
+#include "lib/common.h"
 #include "op.h"
 
 class chunk
