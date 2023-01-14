@@ -1,1 +1,1 @@
-cmake -H. -Bbuild && cd build && make all 
+cmake -H. -Bbuild -DCMAKE_BUILD_TYPE=Debug && cd build && make all 
