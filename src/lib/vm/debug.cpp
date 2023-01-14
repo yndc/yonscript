@@ -10,10 +10,11 @@ static int simple_instruction(chunk *c, const char *name, std::stringstream *buf
     return offset + 1;
 }
 
+// template <typename T>
 static int constant_instruction(chunk *c, const char *name, std::stringstream *buffer, int offset)
 {
     uint8_t constantIndex = c->code[offset + 1];
-    *buffer << fmt::format("{}\t{}", name, constantIndex, c->floats[constantIndex]) << std::endl;
+    *buffer << fmt::format("{}\t{}", name, c->floats[constantIndex]) << std::endl;
     return offset + 2;
 }
 

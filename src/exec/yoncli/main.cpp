@@ -18,11 +18,16 @@ int main(int argc, const char *argv[])
     c->write_instruction(OP_CONSTANT, source_pos(2, 23));
     c->write_instruction(c->write_constant_float(1.2), source_pos(2, 23));
     c->write_instruction(OP_CONSTANT, source_pos(2, 23));
-    c->write_instruction(c->write_constant_float(1.2), source_pos(2, 23));
+    c->write_instruction(c->write_constant_float(3), source_pos(2, 23));
     c->write_instruction(OP_RETURN, source_pos(5, 23));
 
-    std::stringstream *buffer = disassemble_chunk(c, "test chunk");
-    std::cout << buffer->str();
+    vm v;
+    interpret_result r = v.interpret(c);
+
+    std::cout << r;
+
+    // std::stringstream *buffer = disassemble_chunk(c, "test chunk");
+    // std::cout << buffer->str();
 
     return 0;
 }

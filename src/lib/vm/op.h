@@ -3,4 +3,4 @@
 typedef enum {
     OP_RETURN,
     OP_CONSTANT,
-} OPCode;
+} op_code;

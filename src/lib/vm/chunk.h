@@ -8,7 +8,7 @@
 struct chunk
 {
     std::vector<uint8_t> code;
-    std::vector<uint8_t> floats;
+    std::vector<float> floats;
     std::vector<source_pos> pos; //TODO: compress line using run-length encoding
 
     /**

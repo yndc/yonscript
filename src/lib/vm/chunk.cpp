@@ -9,5 +9,5 @@ void chunk::write_instruction(uint8_t byte, source_pos pos)
 int chunk::write_constant_float(float value)
 {
   this->floats.push_back(value);
-  return (int)this->floats.size();
+  return (int)this->floats.size() - 1;
 }
