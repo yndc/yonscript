@@ -1,16 +1,23 @@
 #pragma once
 
 #include <vector>
+#include "lib/vm/source.h"
 #include "lib/common.h"
 #include "op.h"
 
-class chunk
+struct chunk
 {
     std::vector<uint8_t> code;
+    std::vector<uint8_t> floats;
+    std::vector<source_pos> pos; //TODO: compress line using run-length encoding
 
-public:
     /**
      * write a byte into the chunk
      */
-    void write(uint8_t byte);
+    void write_instruction(uint8_t byte, source_pos pos);
+
+    /**
+     * write a constant float into the chunk
+     */
+    int write_constant_float(float value);
 };

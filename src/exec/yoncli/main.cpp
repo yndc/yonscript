@@ -1,13 +1,28 @@
 #include "lib/vm/vm.h"
 #include "lib/vm/chunk.h"
 #include "lib/vm/debug.h"
+#include "lib/vm/source.h"
 #include <iostream>
+#include <sstream>
 
-int main(int argc, const char* argv[]) {
-    chunk* c = new chunk();
-    c->write(OP_RETURN);
-    
-    disassemble_chunk(c, "test chunk");
+int main(int argc, const char *argv[])
+{
+    chunk *c = new chunk();
+
+    c->write_instruction(OP_CONSTANT, source_pos(1, 23));
+    c->write_instruction(c->write_constant_float(1.2), source_pos(1, 23));
+    c->write_instruction(OP_CONSTANT, source_pos(1, 23));
+    c->write_instruction(c->write_constant_float(1.2), source_pos(1, 23));
+    c->write_instruction(OP_CONSTANT, source_pos(1, 23));
+    c->write_instruction(c->write_constant_float(1.2), source_pos(1, 23));
+    c->write_instruction(OP_CONSTANT, source_pos(2, 23));
+    c->write_instruction(c->write_constant_float(1.2), source_pos(2, 23));
+    c->write_instruction(OP_CONSTANT, source_pos(2, 23));
+    c->write_instruction(c->write_constant_float(1.2), source_pos(2, 23));
+    c->write_instruction(OP_RETURN, source_pos(5, 23));
+
+    std::stringstream *buffer = disassemble_chunk(c, "test chunk");
+    std::cout << buffer->str();
 
     return 0;
 }

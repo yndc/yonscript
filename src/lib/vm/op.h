@@ -2,4 +2,5 @@
 
 typedef enum {
     OP_RETURN,
+    OP_CONSTANT,
 } OPCode;
