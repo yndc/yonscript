@@ -3,8 +3,6 @@
 #include "lib/collection/stack.h"
 #include "chunk.h"
 
-#define STACK_MAX 256
-
 /**
  * Interpretation result returned by a VM instance after running a chunk
  */
@@ -20,8 +18,6 @@ typedef enum
  */
 class vm
 {
-  fixed_stack<float, STACK_MAX> float_stack;
-
 public:
   /**
    * Execute the given chunk of code

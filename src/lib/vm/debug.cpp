@@ -46,6 +46,16 @@ int disassemble_instruction(chunk *c, std::stringstream *buffer, int offset)
     {
     case OP_CONSTANT:
         return constant_instruction(c, "OP_CONSTANT", buffer, offset);
+    case OP_NEGATE:
+        return simple_instruction(c, "OP_NEGATE", buffer, offset);
+    case OP_ADD:
+        return simple_instruction(c, "OP_ADD", buffer, offset);
+    case OP_SUBTRACT:
+        return simple_instruction(c, "OP_SUBTRACT", buffer, offset);
+    case OP_MULTIPLY:
+        return simple_instruction(c, "OP_MULTIPLY", buffer, offset);
+    case OP_DIVIDE:
+        return simple_instruction(c, "OP_DIVIDE", buffer, offset);
     case OP_RETURN:
         return simple_instruction(c, "OP_RETURN", buffer, offset);
     default:
