@@ -1,0 +1,45 @@
+component Token 
+    token: string
+
+system TokenExtractor
+    reads HTTP.Request
+    reads HTTP.Header
+    no StatusFail
+    no StatusSuccess
+    entity => void
+        token = GetBearerToken(entity)
+        if token.Empty()
+            token = GetURLQueryToken(entity)
+            if token.Empty()
+                entity.AddComponent(StatusFail)
+
+        entity.AddComponent(Token(token))
+
+system TokenResolver
+    reads Token 
+    no StatusFail
+    no StatusSuccess
+    depends db [Postgres.Connection]
+    entity => void 
+        token = entity[Token].token 
+        user = db.Query("SELECT id, name FROM users WHERE token = $1", token).First().Deserialize(User)
+        if row.Empty() 
+            entity.AddComponent(HTTP.ResponseStatus(403))
+            entity.AddComponent(StatusFail("invalid token"))
+        entity.AddComponent(user)
+        entity.AddComponent(StatusSuccess)
+
+
+function GetBearerToken
+    (entity: Entity<HTTP.Header>) => string
+        bearer = entity[HTTP.Header].Get("Authorization")
+        if bearer.Empty()
+            return string.Empty()
+        return bearer.Explode().TryGet(1)
+
+function GetURLQueryToken
+    (entity: Entity<HTTP.Header>) => string
+        bearer = entity[HTTP.Header].Get("Authorization")
+        if bearer.Empty()
+            return string.Empty()
+        return bearer.Explode().TryGet(1)

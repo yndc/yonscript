@@ -1,0 +1,3 @@
+component User
+    id: string 
+    name: string 
