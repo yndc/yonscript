@@ -68,3 +68,4 @@ interpret_result vm::execute(chunk *c)
 
 #undef READ_NEXT_BYTE
 #undef READ_NEXT_FLOAT
+#undef BINARY_OP
