@@ -4,8 +4,8 @@ component Token
 system TokenExtractor
     reads HTTP.Request
     reads HTTP.Header
-    no StatusFail
-    no StatusSuccess
+    without StatusFail
+    without StatusSuccess
     entity => void
         token = GetBearerToken(entity)
         if token.Empty()
@@ -17,8 +17,8 @@ system TokenExtractor
 
 system TokenResolver
     reads Token 
-    no StatusFail
-    no StatusSuccess
+    without StatusFail
+    without StatusSuccess
     depends db [Postgres.Connection]
     entity => void 
         token = entity[Token].token 

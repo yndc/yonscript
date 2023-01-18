@@ -1,0 +1,26 @@
+operators:
+  OP_ADD: "+"
+  OP_NEG: "-"
+  OP_MUL: "*"
+  OP_DIV: "/"
+
+keywords:
+  KW_IF: "if" 
+  KW_CONTINUE: "continue"
+  KW_FOR: "for"
+  KW_LOOP: "loop"
+  KW_WHILE: "while"
+  KW_ELSE: "else"
+  KW_RETURN: "return"
+  KW_BREAK: "break"
+  KW_MATCH: "match"
+  KW_TRUE: "true"
+  KW_FALSE: "false"
+  KW_CONST: const
+  KW_FUNCTION: function
+  KW_COMP: component
+  KW_SYS: system
+  KW_READS: reads
+  KW_MUTATES: mutates
+  KW_WITHOUT: without
+  KW_FILTER: filter
