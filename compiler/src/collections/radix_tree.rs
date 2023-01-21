@@ -51,8 +51,9 @@ impl<T> RadixTree<T> {
 
             // both shares a common prefix
             } else if common_prefix_count > 0 {
+                println!("{}", common_prefix_count);
                 self.fragment_node(child_id, common_prefix_count, None);
-                self.insert_to_node(child_id, key[child_key_len..].to_vec(), value);
+                self.insert_to_node(child_id, key[common_prefix_count..].to_vec(), value);
                 return;
             }
         }
@@ -135,12 +136,16 @@ impl<T> fmt::Debug for RadixTree<T> {
         for node in self {
             if node.1 == 1 {
                 let str = std::str::from_utf8(&node.0.key).unwrap();
-                write!(f, "{}\n", str)?;
+                write!(f, "{}", str)?;
             }
             if node.1 > 1 {
                 let str = std::str::from_utf8(&node.0.key).unwrap();
-                write!(f, "{}-{}\n", " ".repeat(node.1 - 2), str)?;
+                write!(f, "{}├ {}", "│ ".repeat(node.1 - 2), str)?;
             }
+
+            write!(f, "\n")?;
+
+            // └ ├ ─
         }
         Ok(())
     }

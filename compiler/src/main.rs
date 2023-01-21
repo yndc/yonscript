@@ -21,15 +21,22 @@ fn main() {
     // dbg!(result.unwrap());
     let mut symbols = collections::radix_tree::RadixTree::new();
     symbols.insert("test".as_bytes().to_vec(), 1);
-    // dbg!(&symbols);
     symbols.insert("testa".as_bytes().to_vec(), 1);
-    // dbg!(&symbols);
+    symbols.insert("tesalo".as_bytes().to_vec(), 1);
     symbols.insert("testament".as_bytes().to_vec(), 1);
-    // dbg!(&symbols);
     symbols.insert("testalogy".as_bytes().to_vec(), 1);
     symbols.insert("testoterone".as_bytes().to_vec(), 1);
     symbols.insert("title".as_bytes().to_vec(), 1);
     symbols.insert("tian".as_bytes().to_vec(), 1);
-    symbols.insert("tesalo".as_bytes().to_vec(), 1);
+    symbols.insert("tesalonika".as_bytes().to_vec(), 1);
+    symbols.insert("teslo".as_bytes().to_vec(), 1);
+    symbols.insert("tomboy".as_bytes().to_vec(), 1);
+    symbols.insert("tomato".as_bytes().to_vec(), 1);
+    symbols.insert("tomatoes".as_bytes().to_vec(), 1);
+    symbols.insert("tomatos".as_bytes().to_vec(), 1);
+    symbols.insert("toes".as_bytes().to_vec(), 1);
+    symbols.insert("cuteygendut".as_bytes().to_vec(), 1);
+    symbols.insert("cuut".as_bytes().to_vec(), 1);
+    symbols.insert("cut nyak dien".as_bytes().to_vec(), 1);
     dbg!(&symbols);
 }
