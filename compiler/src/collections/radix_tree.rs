@@ -1,4 +1,4 @@
-use std::{cmp::min, fmt, vec};
+use std::{cmp::min, fmt, mem, vec};
 
 use super::arena::{Arena, ID};
 
@@ -69,18 +69,21 @@ impl<T> RadixTree<T> {
 
     /// fragment a node
     fn fragment_node(&mut self, node_id: ID, len: usize, value: Option<T>) {
-        let node = &self.arena[node_id];
-        let (_base, rest) = node.key.split_at(len);
+        // create the intermediate node
+        let node = &mut self.arena[node_id];
+        let key = node.key.clone();
+        let children = node.children.clone();
+        let (base, rest) = key.split_at(len);
+
         let intermediate = Node {
-            children: node.children.clone(),
-            value: None,
+            children,
+            value: mem::replace(&mut node.value, None),
             key: rest.to_vec(),
         };
-
         let intermediate_id = self.arena.push(intermediate);
 
+        // update the node
         let node = &mut self.arena[node_id];
-        let (base, _rest) = node.key.split_at(len);
         node.children = vec![intermediate_id];
         node.value = value;
         node.key = base.to_vec();
@@ -130,7 +133,10 @@ impl<'a, T> Iterator for RadixTreeIterator<'a, T> {
     }
 }
 
-impl<T> fmt::Debug for RadixTree<T> {
+impl<T> fmt::Debug for RadixTree<T>
+where
+    T: std::fmt::Debug,
+{
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "\n")?;
         for node in self {
@@ -142,6 +148,8 @@ impl<T> fmt::Debug for RadixTree<T> {
                 let str = std::str::from_utf8(&node.0.key).unwrap();
                 write!(f, "{}├ {}", "│ ".repeat(node.1 - 2), str)?;
             }
+
+            write!(f, ": {:?}", &node.0.value)?;
 
             write!(f, "\n")?;
 
