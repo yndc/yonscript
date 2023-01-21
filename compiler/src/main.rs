@@ -18,12 +18,18 @@ fn main() {
         .map(scan_source)
         .collect();
 
-    dbg!(result.unwrap());
-
-    let symbols = collections::radix_tree::RadixTree::new();
+    // dbg!(result.unwrap());
+    let mut symbols = collections::radix_tree::RadixTree::new();
     symbols.insert("test".as_bytes().to_vec(), 1);
+    // dbg!(&symbols);
     symbols.insert("testa".as_bytes().to_vec(), 1);
+    // dbg!(&symbols);
     symbols.insert("testament".as_bytes().to_vec(), 1);
+    // dbg!(&symbols);
     symbols.insert("testalogy".as_bytes().to_vec(), 1);
-    // dbg!(symbols);
+    symbols.insert("testoterone".as_bytes().to_vec(), 1);
+    symbols.insert("title".as_bytes().to_vec(), 1);
+    symbols.insert("tian".as_bytes().to_vec(), 1);
+    symbols.insert("tesalo".as_bytes().to_vec(), 1);
+    dbg!(&symbols);
 }

@@ -26,6 +26,18 @@
             ],
             "preLaunchTask": "Build debug",
             "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug Rust",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--manifest-path",
+                    "${fileDirname}/../Cargo.toml"
+                ]
+            }
         }
     ]
 }
