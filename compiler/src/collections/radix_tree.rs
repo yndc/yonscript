@@ -26,6 +26,11 @@ impl<T> RadixTree<T> {
         self.insert_to_node(root_id, key, value);
     }
 
+    /// find a node by key
+    // fn find_node(&self, key: Vec<u8>) -> Option<&T> {
+ 
+    // }
+
     fn insert_to_node(&mut self, node_id: ID, key: Vec<u8>, value: T) {
         let node = &self.arena[node_id];
         for child_id_ref in &node.children {
@@ -88,6 +93,11 @@ impl<T> RadixTree<T> {
         node.value = value;
         node.key = base.to_vec();
     }
+
+    // remove a node 
+    // fn remove_node(&mut self, node_id: ID) -> Option<T> {
+
+    // }
 }
 
 pub struct RadixTreeIterator<'a, T> {
@@ -149,7 +159,11 @@ where
                 write!(f, "{}├ {}", "│ ".repeat(node.1 - 2), str)?;
             }
 
-            write!(f, ": {:?}", &node.0.value)?;
+            let value = &node.0.value;
+            match value {
+                None => (),
+                Some(value) => write!(f, " -> {:?}", value)?,
+            }
 
             write!(f, "\n")?;
 

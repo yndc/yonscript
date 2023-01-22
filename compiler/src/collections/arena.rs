@@ -2,7 +2,7 @@ use std::{io::Read, mem, ops::{Index, IndexMut}};
 
 #[derive(Debug)]
 pub struct Arena<T> {
-    data: Vec<T>,
+    data: Vec<Option<T>>,
     empty: Vec<usize>,
     versions: Vec<i32>,
     len: usize,
@@ -26,7 +26,7 @@ impl<T> Arena<T> {
 
     pub fn find(&self, id: ID) -> Option<&T> {
         if id.version == self.versions[id.index] {
-            Some(&self.data[id.index])
+            Some(self.data[id.index].as_ref().unwrap())
         } else {
             None
         }
@@ -34,7 +34,7 @@ impl<T> Arena<T> {
 
     pub fn find_mut(&mut self, id: ID) -> Option<&mut T> {
         if id.version == self.versions[id.index] {
-            Some(&mut self.data[id.index])
+            Some(self.data[id.index].as_mut().unwrap())
         } else {
             None
         }
@@ -45,11 +45,11 @@ impl<T> Arena<T> {
         match self.empty.pop() {
             Some(index) => {
                 let version = self.versions[index] * -1 + 1;
-                self.data[index] = value;
+                self.data[index] = Some(value);
                 return ID { index, version };
             }
             None => {
-                self.data.push(value);
+                self.data.push(Some(value));
                 self.versions.push(0);
                 return ID {
                     index: self.data.len() - 1,
@@ -59,12 +59,12 @@ impl<T> Arena<T> {
         };
     }
 
-    pub fn remove(&mut self, id: ID) -> Option<&T> {
+    pub fn remove(&mut self, id: ID) -> Option<T> {
         self.len -= 1;
         if id.version == self.versions[id.index] {
             self.empty.push(id.index);
             self.versions[id.index] *= -1;
-            Some(&self.data[id.index])
+            mem::take(&mut self.data[id.index])
         } else {
             None
         }

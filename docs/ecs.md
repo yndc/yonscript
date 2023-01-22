@@ -1,12 +1,18 @@
 # Entity Component System
 
+## Components
+
+A component is a container of data. 
+
+A component could refer to another component, or entity. 
+
 ## Entity
 
 Think of entities as a container of components of data. 
 
 ```
 player = new entity                     // create a new empty entity
-player<Health> = Health{ max: 100 }     // add a Health component to the player entity
+player[Health] = Health { max: 100 }     // add a Health component to the player entity
 remove player<Health>                   // remove the Health component from the entity
 ```
 
@@ -38,3 +44,6 @@ handle event Damage:
         event.receiver<Health>.hp - event.damage
     }
 ```
+
+
+
