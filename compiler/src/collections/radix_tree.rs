@@ -28,7 +28,7 @@ impl<T> RadixTree<T> {
 
     /// find a node by key
     // fn find_node(&self, key: Vec<u8>) -> Option<&T> {
- 
+
     // }
 
     fn insert_to_node(&mut self, node_id: ID, key: Vec<u8>, value: T) {
@@ -94,13 +94,20 @@ impl<T> RadixTree<T> {
         node.key = base.to_vec();
     }
 
-    // remove a node 
+    // remove a node
     // fn remove_node(&mut self, node_id: ID) -> Option<T> {
 
     // }
 }
 
-pub struct RadixTreeIterator<'a, T> {
+/// A node in the tree
+pub struct Node<T> {
+    key: Vec<u8>,
+    value: Option<T>,
+    children: Vec<ID>,
+}
+
+pub struct Iterator<'a, T> {
     arena: &'a Arena<Node<T>>,
     ids: Vec<(ID, usize)>,
     index: usize,
@@ -108,7 +115,7 @@ pub struct RadixTreeIterator<'a, T> {
 
 impl<'a, T> IntoIterator for &'a RadixTree<T> {
     type Item = (&'a Node<T>, usize);
-    type IntoIter = RadixTreeIterator<'a, T>;
+    type IntoIter = Iterator<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
         let mut ids: Vec<(ID, usize)> = Vec::new();
@@ -120,7 +127,7 @@ impl<'a, T> IntoIterator for &'a RadixTree<T> {
         }
         walk(&self.arena, &mut ids, self.root, 0);
 
-        RadixTreeIterator {
+        Iterator {
             arena: &self.arena,
             ids,
             index: 0,
@@ -128,7 +135,7 @@ impl<'a, T> IntoIterator for &'a RadixTree<T> {
     }
 }
 
-impl<'a, T> Iterator for RadixTreeIterator<'a, T> {
+impl<'a, T> core::iter::Iterator for Iterator<'a, T> {
     type Item = (&'a Node<T>, usize);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -173,11 +180,94 @@ where
     }
 }
 
-/// A node in the tree
-pub struct Node<T> {
+pub struct Predictor<'a, T> {
+    tree: &'a RadixTree<T>,
+    current_match: ID,
+    next: Option<ID>,
     key: Vec<u8>,
-    value: Option<T>,
-    children: Vec<ID>,
+    path: Vec<ID>,
+    exact: bool,
+    index: usize,
+}
+
+impl<'a, T> Predictor<'a, T> {
+    pub fn new(tree: &RadixTree<T>) -> Predictor<T> {
+        Predictor {
+            tree,
+            current_match: tree.root,
+            next: Some(tree.root),
+            key: Vec::new(),
+            exact: false,
+            path: Vec::new(),
+            index: 0,
+        }
+    }
+
+    pub fn add(&mut self, key: &Vec<u8>) {
+        self.key.append(&mut key.clone());
+        self.update();
+    }
+
+    pub fn predict(&self) -> Option<Vec<u8>> {
+        match self.next {
+            None => None,
+            Some(id) => {
+                let mut b: Vec<u8> = Vec::new();
+                for step in &self.path {
+                    b.append(&mut self.tree.arena[*step].key.clone());
+                }
+                b.append(&mut self.tree.arena[id].key.clone());
+                Some(b)
+            }
+        }
+    }
+
+    fn update(&mut self) {
+        let mut matched_node_id = self.current_match;
+        let mut most_common_prefix_count = 0;
+        let mut most_common_node_id: Option<ID>;
+        let mut current_node;
+        'node_iterator: loop {
+            current_node = &self.tree.arena[matched_node_id];
+            let key = &self.key[self.index..];
+            most_common_node_id = None;
+
+            // exact match with the current node
+            if key.len() == 0 {
+                self.current_match = matched_node_id;
+                if !current_node.value.is_none() {
+                    self.exact = true;
+                    self.next = None;
+                    return;
+                }
+            }
+
+            for child_key in &current_node.children {
+                let child_node = &self.tree.arena[*child_key];
+                let common_prefix_count = find_common_prefix_count(&child_node.key, key);
+                if common_prefix_count > most_common_prefix_count {
+                    most_common_prefix_count = common_prefix_count;
+                    most_common_node_id = Some(*child_key);
+                }
+
+                // the input fully contains the child, proceed to the next node
+                if child_node.key.len() == most_common_prefix_count {
+                    self.index += child_node.key.len();
+                    self.path.push(*child_key);
+                    matched_node_id = *child_key;
+                    continue 'node_iterator;
+                }
+            }
+
+            // the input doesn't fully contains any of the current child
+            // we set the next node as the one with the highest common prefix
+            self.exact = false;
+            self.current_match = matched_node_id;
+            self.next = most_common_node_id;
+            break;
+        }
+        self.current_match = matched_node_id;
+    }
 }
 
 /// Get the number of bytes which both given byte arrays has the same values
@@ -193,4 +283,54 @@ fn find_common_prefix_count(node_base_str: &[u8], str2: &[u8]) -> usize {
     }
 
     return common;
+}
+
+#[cfg(test)]
+mod test {
+    use crate::collections::radix_tree::{self, RadixTree};
+    use rand;
+    use std;
+
+    use super::Predictor;
+
+    #[test]
+    fn push() {
+        let mut t: RadixTree<()> = RadixTree::new();
+        t.insert("hamster".as_bytes().to_vec(), ());
+        t.insert("hamstring".as_bytes().to_vec(), ());
+        t.insert("hamburger".as_bytes().to_vec(), ());
+        t.insert("hamburgers".as_bytes().to_vec(), ());
+        t.insert("hamburg".as_bytes().to_vec(), ());
+        t.insert("hams".as_bytes().to_vec(), ());
+        t.insert("ham".as_bytes().to_vec(), ());
+        dbg!(&t);
+        fn expect_prediction<T>(p: &Predictor<T>, str: Option<&str>) {
+            match p.predict() {
+                None => assert_eq!(str, None),
+                Some(value) => assert_eq!(str.unwrap(), std::str::from_utf8(&value).unwrap()),
+            }
+        }
+
+        let mut p = Predictor::new(&t);
+        p.add(&"h".as_bytes().to_vec());
+        expect_prediction(&p, Some("ham"));
+        p.add(&"a".as_bytes().to_vec());
+        expect_prediction(&p, Some("ham"));
+        p.add(&"m".as_bytes().to_vec());
+        expect_prediction(&p, None);
+        p.add(&"b".as_bytes().to_vec());
+        expect_prediction(&p, Some("hamburg"));
+        p.add(&"u".as_bytes().to_vec());
+        expect_prediction(&p, Some("hamburg"));
+        p.add(&"r".as_bytes().to_vec());
+        expect_prediction(&p, Some("hamburg"));
+        p.add(&"g".as_bytes().to_vec());
+        expect_prediction(&p, None);
+        p.add(&"e".as_bytes().to_vec());
+        expect_prediction(&p, Some("hamburger"));
+        p.add(&"r".as_bytes().to_vec());
+        expect_prediction(&p, None);
+        p.add(&"s".as_bytes().to_vec());
+        expect_prediction(&p, None);
+    }
 }
