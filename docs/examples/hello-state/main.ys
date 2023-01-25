@@ -1,20 +1,33 @@
 use IO 
 
-state counter (integer) = 0
+state Counter 
+    label   String
+    counter Integer
 
 event Increment
 
-incrementer: handle Increment 
-    event => 
-        counter = counter + 1
+system Incrementer 
+    on event        Increment
+    foreach state   Counter 
+    (state, event)  => 
+        state.counter += 1
 
-printer: handle Increment 
-    after incrementer
-    event => 
-        print "Counter incremented to {}" counter
+system Printer 
+    after           Incrementer
+    on event        Increment
+    foreach state   Counter 
+    (state, event)  => 
+        emit IO.Print "Counter {} incremented to {}" state.label state.counter
 
+one = new Counter { label: "One" }
+two = new Counter { label: "Two" }
+
+// Emit globally
+emit Increment 
 emit Increment
 emit Increment
-emit Increment
-emit Increment
-emit Increment
+
+// Emit to specific state 
+emit Increment to one
+emit Increment to two
+emit Increment to two

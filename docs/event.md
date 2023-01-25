@@ -172,5 +172,8 @@ emit Temperature { value: 65 }      # Prints "High temperature detected: 65"
 
 What's the difference with putting an `if` condition inside the event handler itself? The event engine will index the filters and group handlers with the same filters together for efficiency.
 
-## Terminology on "event" and "message"
+## Terminology on "event", "command", and "message"
 
+Although we're using the "event" keyword extensively in the language, the actual usage of "event" could be similar with the concept of "message" and "command" at times. 
+
+We decided to stick with the "event" terminology as it is the default behaviour. 

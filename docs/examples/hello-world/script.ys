@@ -1,1 +1,3 @@
-print "Hello, World!"
+use IO
+
+emit IO.Print "Hello, World!"

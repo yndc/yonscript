@@ -1,3 +1,5 @@
+use IO
+
 print "Hello, events!"
 
 # Define the message data
@@ -15,17 +17,10 @@ system Formatter
 system Printer
     reads event Message
     (event) =>
-        emit  event.message
+        emit IO.Print event.message
 
 # Emit events using the `emit` keyword
 emit Message { message: "hello!", sender: "yonder" }    # Will print "yonder says hello!"
 emit Message { message: "world!", sender: "yonder" }    # Will print "yonder says world!"
 emit Message { message: "hi!", sender: "socks" }        # Will print "socks says hi!"
 emit Message { message: "bye!", sender: "evan" }        # Will print "evan says bye!"
-
-# Stop the event handlers
-stop senderAppender
-stop messagePrinter
-
-# Emit more events, but since the handlers have gone, nothing will happen
-emit IncomingMessage{ message: "I'm alone..", sender: "loner" }
