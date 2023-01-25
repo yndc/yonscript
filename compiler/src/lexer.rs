@@ -2,7 +2,13 @@ use std::fmt;
 use std::io::{self, BufRead};
 use std::str;
 
+use crate::collections::radix_tree::RadixTree;
 use crate::token::Token;
+
+struct Line {
+    tokens: Vec<Token>,
+    depth: usize,
+}
 
 type Result<T> = std::result::Result<T, ScannerError>;
 
@@ -31,7 +37,7 @@ where
             Ok(value) => value,
             Err(_) => return Err(ScannerError),
         };
-        tokens.append(&mut iterate(&mut s.chars().into_iter())?);
+        tokens.append(&mut scan_line(&mut s.chars())?);
         buf = s.into_bytes();
         buf.clear();
     }
@@ -39,14 +45,15 @@ where
     Ok(tokens)
 }
 
-fn iterate(chars: &mut str::Chars) -> Result<Vec<Token>> {
+fn scan_line(chars: &mut str::Chars) -> Result<Vec<Token>> {
     let tokens: Vec<Token> = Vec::<Token>::new();
-    while let Some(c) = chars.next() {
-        // match c {
 
-        // }
+    let mut current;
+    while let Some(c) = chars.next() {
+        match c {
+
+        }
         println!("char: {}", c);
     }
-    chars.next();
     Ok(tokens)
 }

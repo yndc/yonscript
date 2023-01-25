@@ -1,0 +1,20 @@
+use IO 
+
+state counter (integer) = 0
+
+event Increment
+
+incrementer: handle Increment 
+    event => 
+        counter = counter + 1
+
+printer: handle Increment 
+    after incrementer
+    event => 
+        IO.Println "Counter incremented to {}" counter
+
+emit Increment
+emit Increment
+emit Increment
+emit Increment
+emit Increment

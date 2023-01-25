@@ -1,0 +1,28 @@
+use IO 
+use Math
+
+IO.Println "Hello, Math!"
+
+// Arithmatics 
+
+IO.Println (13 + 56 - 24 * 78 / 64)
+IO.Println (67 + 3) * 5 - 6 + 9 - (-23) + (10 - ((2456 - 678) * 9))
+IO.Println (336 / 2 / 2 * 5 - 3 * 7 / 3 - 3 / 2 * 1000 - 245 + (34 - 2))
+IO.Println (13.0 + 56.0 - 24.0 * 78.0 / 64.0)
+
+// Exponents 
+
+IO.Println Math.Power(2, 5)
+IO.Println Math.Power(5, 2)
+IO.Println Math.Power(100, -2)
+IO.Println Math.Power(3467, -34)
+
+// Square roots 
+
+IO.Println Math.Sqrt(400, 2)
+IO.Println Math.Sqrt(300, 5)
+
+// Tuples 
+
+IO.Println ((1, 2) + (5, 3))
+IO.Println ((1.0, 2) + (5.0, 3))

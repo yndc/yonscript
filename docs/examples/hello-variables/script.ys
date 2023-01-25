@@ -1,0 +1,19 @@
+use IO 
+
+handle event Start
+    () => Empty 
+        IO.Println "Hello, Variables!"
+
+        constant a = 20 * 2
+        constant b = -35
+        constant c = a + b
+
+        IO.Println "a = {}, b = {}, c = a + b = {}" a b c
+
+        mutable d = -24
+        constant e = 68
+        constant f = (d + e) * e - e + 3 - (-23) + (10 - ((d - e) * d))
+
+        IO.Println "f = {}" f
+
+

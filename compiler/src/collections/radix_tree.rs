@@ -4,14 +4,14 @@ use super::arena::{Arena, ID};
 
 /// Radix tree is a space-optimized prefix-tree as a key-value storage
 pub struct RadixTree<T> {
-    arena: Arena<Node<T>>,
+    arena: Arena<Exact<T>>,
     root: ID,
 }
 
 impl<T> RadixTree<T> {
     pub fn new() -> Self {
         let mut arena = Arena::new();
-        let root = Node {
+        let root = Exact {
             key: Vec::new(),
             value: None,
             children: Vec::new(),
@@ -64,7 +64,7 @@ impl<T> RadixTree<T> {
         }
 
         // no child matched with the input, create a new child
-        let new_child = self.arena.push(Node {
+        let new_child = self.arena.push(Exact {
             key,
             value: Some(value),
             children: Vec::new(),
@@ -80,7 +80,7 @@ impl<T> RadixTree<T> {
         let children = node.children.clone();
         let (base, rest) = key.split_at(len);
 
-        let intermediate = Node {
+        let intermediate = Exact {
             children,
             value: mem::replace(&mut node.value, None),
             key: rest.to_vec(),
@@ -101,25 +101,25 @@ impl<T> RadixTree<T> {
 }
 
 /// A node in the tree
-pub struct Node<T> {
+pub struct Exact<T> {
     key: Vec<u8>,
     value: Option<T>,
     children: Vec<ID>,
 }
 
 pub struct Iterator<'a, T> {
-    arena: &'a Arena<Node<T>>,
+    arena: &'a Arena<Exact<T>>,
     ids: Vec<(ID, usize)>,
     index: usize,
 }
 
 impl<'a, T> IntoIterator for &'a RadixTree<T> {
-    type Item = (&'a Node<T>, usize);
+    type Item = (&'a Exact<T>, usize);
     type IntoIter = Iterator<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
         let mut ids: Vec<(ID, usize)> = Vec::new();
-        fn walk<T>(arena: &Arena<Node<T>>, ids: &mut Vec<(ID, usize)>, node_id: ID, depth: usize) {
+        fn walk<T>(arena: &Arena<Exact<T>>, ids: &mut Vec<(ID, usize)>, node_id: ID, depth: usize) {
             ids.push((node_id, depth));
             for child_id in &arena[node_id].children {
                 walk(arena, ids, *child_id, depth + 1);
@@ -136,7 +136,7 @@ impl<'a, T> IntoIterator for &'a RadixTree<T> {
 }
 
 impl<'a, T> core::iter::Iterator for Iterator<'a, T> {
-    type Item = (&'a Node<T>, usize);
+    type Item = (&'a Exact<T>, usize);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index == self.ids.len() {

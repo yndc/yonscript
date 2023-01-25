@@ -4,10 +4,10 @@ Yonscript has a built-in event system for writing event handlers flexibly and ef
 
 ## Definition 
 
-Events can be defined with `define event` keyword:
+Events can be defined with `event` keyword:
 
 ```
-define event <event name> {
+event <event name> {
     <key>: <type>
     ...
 }

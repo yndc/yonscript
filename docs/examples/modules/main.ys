@@ -1,0 +1,9 @@
+use IO 
+import ./first/one.ys       as One
+import first/second/two.ys  as Two
+
+handle event Start
+    () => Empty 
+        One.A()
+        Two.B()
+        IO.Println("Main is called!")
