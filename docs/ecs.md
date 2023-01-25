@@ -2,7 +2,7 @@
 
 ## Components
 
-A component is a container of data. 
+A component is a container of data, it is the only way to create a persistent state in Yonscript.
 
 A component could refer to another component, or entity. 
 

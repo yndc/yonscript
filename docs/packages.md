@@ -10,7 +10,7 @@ Declarations of functions, events, structures, states, etc are required to be ex
 // first/one.ys
 
 expose function A () => 
-    IO.Println "A is called!"
+    print "A is called!"
 ```
 
 Source files within the same package can be imported through relative paths and absolute paths. 
@@ -23,7 +23,7 @@ Relative paths uses the importer file location as the origin.
 import ./one.ys as One
 
 expose function B () => 
-    IO.Println "B is called!"
+    print "B is called!"
 
 // main.ys 
 use IO 
@@ -34,7 +34,7 @@ handle event Start
     () => Empty 
         One.A()
         Two.B()
-        IO.Println("Main is called!")
+        print("Main is called!")
 ```
 
 Absolute paths uses the `yonscript.package.yaml` as the path origin. 

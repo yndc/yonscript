@@ -1,5 +1,1 @@
-use IO 
-
-handle event Start
-    () => Empty 
-        IO.Println "Hello, World!"
+print "Hello, World!"

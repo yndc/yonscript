@@ -1,0 +1,26 @@
+# Anonymous structure
+john: 
+    name: "John"
+    age: 30 
+
+    # Supports nesting 
+    hobbies:
+    - "programming"
+    - "gaming"
+
+# Print it!
+print person
+
+# Define a structure 
+structure Person
+    name       String 
+    age        Integer 
+    hobbies    [String]
+
+# Assign a variable with type "Person" 
+doe (Person): 
+    name: "Doe"
+    age: 34 
+    hobbies:
+    - "cooking"
+    - "gardening"

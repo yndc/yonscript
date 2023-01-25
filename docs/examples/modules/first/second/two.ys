@@ -1,4 +1,4 @@
 import ../one.ys as One
 
 expose function B () => 
-    IO.Println "B is called!"
+    print "B is called!"

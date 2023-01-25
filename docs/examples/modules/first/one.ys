@@ -1,2 +1,2 @@
 expose function A () => 
-    IO.Println "A is called!"
+    print "A is called!"

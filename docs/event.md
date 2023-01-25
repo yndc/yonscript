@@ -2,15 +2,12 @@
 
 Yonscript has a built-in event system for writing event handlers flexibly and efficiently. 
 
-## Definition 
-
 Events can be defined with `event` keyword:
 
 ```
-event <event name> {
+event <event name> 
     <key>: <type>
     ...
-}
 ```
 
 ### Attributes 
@@ -45,9 +42,23 @@ There is two built-in `EventOrder`:
 
 Event ordering might be essential in some scenarios, especially when an event depends on another event before it. However event ordering introduces a hefty performance penalty, as events in the same `EventOrder` cannot be processed in a concurrent manner. Therefore it is wise to use event ordering sparingly, only on monumental events where ordering matters.
 
-## Hooks
+## Handlers 
 
 An event handler is a function that is executed when an event is being emitted. Event handlers cannot change the event data itself, and by default they are run in parallel. So if there are 20 handlers for a specific event, 20 of them will be run in parallel when the specific event is emitted. 
+
+This behaviour can be changed with attributes. 
+
+### Attributes 
+
+#### (optional) Ordering with `order`, `after`, or `before`
+
+Enforce the ordering of event handlers. 
+
+#### (optional) Altering events with `mutator`
+
+Mark the handler as a mutator, this allows the handler to alter the event data or even blocking it, preventing the event to be processed by other handlers after it. 
+
+## Hooks
 
 Event hooks on the other hand, are run sequentially. Also, they could change the event data itself.  
 
@@ -160,3 +171,6 @@ emit Temperature { value: 65 }      # Prints "High temperature detected: 65"
 ```
 
 What's the difference with putting an `if` condition inside the event handler itself? The event engine will index the filters and group handlers with the same filters together for efficiency.
+
+## Terminology on "event" and "message"
+

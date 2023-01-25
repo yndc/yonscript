@@ -11,7 +11,7 @@ incrementer: handle Increment
 printer: handle Increment 
     after incrementer
     event => 
-        IO.Println "Counter incremented to {}" counter
+        print "Counter incremented to {}" counter
 
 emit Increment
 emit Increment

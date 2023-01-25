@@ -1,0 +1,17 @@
+# Spawn a routine that waits for 1 second then prints done 
+delayedHello: routine execute
+    () => 
+        print "delayedHello: Hello.."
+        wait 1s
+        print "delayedHello: ..World!"
+
+# Print immediately from the main process 
+print "main: Hello world!"
+
+# Wait for the delayedHello routine to finish 
+wait delayedHello
+
+# Get a reference to the main process 
+mainProcess: self 
+
+# Spawn a routine that broadcast events

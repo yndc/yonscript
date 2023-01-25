@@ -6,4 +6,4 @@ handle event Start
     () => Empty 
         One.A()
         Two.B()
-        IO.Println("Main is called!")
+        print("Main is called!")
