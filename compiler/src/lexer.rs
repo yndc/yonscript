@@ -1,59 +1,156 @@
-use std::fmt;
+use regex::Regex;
+use std::fs::File;
 use std::io::{self, BufRead};
 use std::str;
+use std::string::FromUtf8Error;
+use std::{fmt, fs};
 
-use crate::collections::radix_tree::RadixTree;
-use crate::token::Token;
+use crate::collections::radix_tree::{Predictor, RadixTree};
+use crate::token::TokenType;
+use crate::token::{self, Token};
 
 struct Line {
-    tokens: Vec<Token>,
+    tokens: Vec<TokenType>,
     depth: usize,
 }
 
-type Result<T> = std::result::Result<T, ScannerError>;
+pub struct Lexer {
+    dictionary: RadixTree<TokenType>,
+}
+
+impl Lexer {
+    pub fn new() -> Lexer {
+        return Lexer {
+            dictionary: token::new_dictionary(),
+        };
+    }
+
+    /// scan a source file, returning a stream of tokens
+    pub fn scan_file(&mut self, path: String) -> Result<Vec<Token>> {
+        let file = open_file(&path)?;
+        // let buffer = Predictor::new(&self.dictionary);
+        let mut buffer: Vec<char> = Vec::new();
+        let mut line_buffer = Vec::<u8>::new();
+        let mut tokens: Vec<Token> = Vec::<Token>::new();
+        let mut line = 0;
+        let mut is_comment = false;
+        let mut is_string_literal = false;
+        let assert_push_buffer = |line: u32, col: u32| {
+            if !buffer.is_empty() {
+                self.dictionary.
+                let value = str::from_utf8(buffer.value()).unwrap().to_string();
+                if let Some(kind) = buffer.get_exact() {
+                    tokens.push(Token {
+                        kind,
+                        pos: token::Position { line, col },
+                    });
+                    buffer.reset();
+                } else if is_valid_identifier(&value) {
+                    tokens.push(Token {
+                        kind: TokenType::Identifier(value),
+                        pos: token::Position { line, col },
+                    });
+                    buffer.reset();
+                } else {
+                    return Err(LexerError {
+                        kind: ErrorKind::InvalidKeyword(value),
+                    });
+                }
+            }
+            return Ok(());
+        };
+
+        while file.read_until(b'\n', &mut line_buffer)? != 0 {
+            let s = String::from_utf8(line_buffer)?;
+            let mut col = 0;
+            while let Some(c) = s.chars().next() {
+                // on empty whitespace or non-alphabetic symbols
+                // we asserts that the current buffer resolves to a valid token
+                // since there is no token that involves whitespace and/or non-alphabetic symbols
+                if c.is_whitespace() || !c.is_alphabetic() {
+                    assert_push_buffer(line, col)?;
+                } else {
+                    let buf: Vec<u8> = Vec::new();
+                    c.encode_utf8(&mut Vec::new());
+                    buffer.add(&buf);
+                }
+                col += 1;
+            }
+            if !buffer.is_empty() {
+                assert_push_buffer(line, col)?;
+            }
+
+            line_buffer = s.into_bytes();
+            line_buffer.clear();
+            line += 1;
+        }
+
+        return Ok(tokens);
+    }
+}
+
+type Result<T> = std::result::Result<T, LexerError>;
 
 #[derive(Debug, Clone)]
-pub struct ScannerError;
+enum ErrorKind {
+    InvalidKeyword(String),
+    InvalidIdentifier(String),
+    InvalidFile(String),
+}
 
-impl fmt::Display for ScannerError {
+#[derive(Debug, Clone)]
+pub struct LexerError {
+    kind: ErrorKind,
+}
+
+impl From<io::Error> for LexerError {
+    fn from(value: io::Error) -> Self {
+        todo!()
+    }
+}
+
+impl From<FromUtf8Error> for LexerError {
+    fn from(value: FromUtf8Error) -> Self {
+        todo!()
+    }
+}
+
+impl fmt::Display for LexerError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "scanner failure")
-    }
-}
-
-/// Scans the given byte buffer into a steam of tokens
-pub fn scan_source<R>(reader: &mut io::BufReader<R>) -> Result<Vec<Token>>
-where
-    R: std::io::Read,
-{
-    let mut buf = Vec::<u8>::new();
-    let mut tokens: Vec<Token> = Vec::<Token>::new();
-    while match reader.read_until(b'\n', &mut buf) {
-        Ok(len) => len,
-        Err(_) => return Err(ScannerError),
-    } != 0
-    {
-        let s = match String::from_utf8(buf) {
-            Ok(value) => value,
-            Err(_) => return Err(ScannerError),
-        };
-        tokens.append(&mut scan_line(&mut s.chars())?);
-        buf = s.into_bytes();
-        buf.clear();
-    }
-
-    Ok(tokens)
-}
-
-fn scan_line(chars: &mut str::Chars) -> Result<Vec<Token>> {
-    let tokens: Vec<Token> = Vec::<Token>::new();
-
-    let mut current;
-    while let Some(c) = chars.next() {
-        match c {
-
+        match self.kind {
+            ErrorKind::InvalidIdentifier(identifier) => {
+                write!(f, "invalid identifier: {}", identifier)
+            }
+            ErrorKind::InvalidKeyword(keyword) => {
+                write!(f, "invalid keyword: {}", keyword)
+            }
+            ErrorKind::InvalidFile(file) => {
+                write!(f, "invalid file: {}", file)
+            }
         }
-        println!("char: {}", c);
     }
-    Ok(tokens)
+}
+
+fn open_file(path: &String) -> Result<io::BufReader<fs::File>> {
+    let file = match File::open(path) {
+        Ok(f) => f,
+        Err(err) => {
+            return Err(LexerError {
+                kind: ErrorKind::InvalidFile(path.clone()),
+            })
+        }
+    };
+    Ok(io::BufReader::new(file))
+}
+
+/// test if the given string is a valid identifier
+fn is_valid_identifier(str: &String) -> bool {
+    static PATTERN: Regex = Regex::new(r"^[a-zA-Z][_a-zA-Z0-9]{0, 30}$").unwrap();
+    return PATTERN.is_match(str);
+}
+
+/// test if the given string is a string literal
+fn is_string_literal(str: &String) -> bool {
+    static PATTERN: Regex = Regex::new(r"^[a-zA-Z][_a-zA-Z0-9]{0, 30}$").unwrap();
+    return PATTERN.is_match(str);
 }
