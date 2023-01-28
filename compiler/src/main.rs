@@ -1,24 +1,17 @@
-use crate::{file::read_file, lexer::scan_source};
+use crate::{file::read_file, lexer::Lexer};
 use std::{fs, io};
 
 mod collections;
+mod dictionary;
 mod file;
 mod lexer;
 mod token;
-mod dictionary;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let file_paths = &args[1..];
-    let result: Result<Vec<Vec<token::Token>>, lexer::ScannerError> = file_paths
-        .iter()
-        .map(read_file)
-        .collect::<io::Result<Vec<io::BufReader<fs::File>>>>()
-        .unwrap()
-        .iter_mut()
-        .map(scan_source)
-        .collect();
-
+    let mut entry_file = read_file(&args[1]).unwrap();
+    let mut lexer = Lexer::new();
+    let result: Result<Vec<token::TokenType>, lexer::LexerError> = lexer.scan(&mut entry_file);
     dbg!(result.unwrap());
     // let mut symbols = collections::radix_tree::RadixTree::new();
     // symbols.insert("test".as_bytes().to_vec(), 1);

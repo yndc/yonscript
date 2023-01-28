@@ -26,6 +26,47 @@ impl<T> RadixTree<T> {
         self.insert_to_node(root_id, key, value);
     }
 
+    pub fn find(&self, key: Vec<u8>) -> Option<T> {
+        let mut current_node_id = self.root;
+        let mut index = 0;
+        'node_iterator: loop {
+            let current_node = &self.arena[current_node_id];
+            if key.len() == 0 {
+                self.current_match = matched_node_id;
+                if !current_node.value.is_none() {
+                    self.exact = true;
+                    self.next = None;
+                    return;
+                }
+            }
+
+            for child_key in &current_node.children {
+                let child_node = &self.tree.arena[*child_key];
+                let common_prefix_count = find_common_prefix_count(&child_node.key, key);
+                if common_prefix_count > most_common_prefix_count {
+                    most_common_prefix_count = common_prefix_count;
+                    most_common_node_id = Some(*child_key);
+                }
+
+                // the input fully contains the child, proceed to the next node
+                if child_node.key.len() == most_common_prefix_count {
+                    self.index += child_node.key.len();
+                    self.path.push(*child_key);
+                    matched_node_id = *child_key;
+                    continue 'node_iterator;
+                }
+            }
+
+            // the input doesn't fully contains any of the current child
+            // we set the next node as the one with the highest common prefix
+            self.exact = false;
+            self.current_match = matched_node_id;
+            self.next = most_common_node_id;
+            break;
+        }
+        self.current_match = matched_node_id;
+    }
+
     /// find a node by key
     // fn find_node(&self, key: Vec<u8>) -> Option<&T> {
 
@@ -56,7 +97,6 @@ impl<T> RadixTree<T> {
 
             // both shares a common prefix
             } else if common_prefix_count > 0 {
-                println!("{}", common_prefix_count);
                 self.fragment_node(child_id, common_prefix_count, None);
                 self.insert_to_node(child_id, key[common_prefix_count..].to_vec(), value);
                 return;
@@ -220,6 +260,34 @@ impl<'a, T> Predictor<'a, T> {
                 Some(b)
             }
         }
+    }
+
+    pub fn is_exact(&self) -> bool {
+        self.exact
+    }
+
+    pub fn get_exact(&self) -> Option<T> {
+        if self.exact {
+            return self.tree.arena[self.current_match].value;
+        }
+        return None;
+    }
+
+    pub fn reset(&mut self) {
+        self.current_match = self.tree.root;
+        self.next = Some(self.tree.root);
+        self.key = Vec::new();
+        self.path = Vec::new();
+        self.exact = false;
+        self.index = 0;
+    }
+
+    pub fn is_empty(&self) -> bool {
+        return self.key.len() == 0;
+    }
+
+    pub fn value(&self) -> &Vec::<u8> {
+        return &self.key;
     }
 
     fn update(&mut self) {

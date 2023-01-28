@@ -21,7 +21,6 @@ where
         } else {
             let (mut start, mut end) = (0 as usize, self.len() - 1);
             loop {
-                println!("start: {} end: {} mid: {}", start, end, mid(start, end));
                 let range = end - start;
                 if range <= 1 {
                     for i in start..(end + 1) {

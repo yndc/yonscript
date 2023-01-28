@@ -6,8 +6,8 @@ use std::string::FromUtf8Error;
 use std::{fmt, fs};
 
 use crate::collections::radix_tree::{Predictor, RadixTree};
-use crate::token::TokenType;
 use crate::token::{self, Token};
+use crate::token::{Dictionary, TokenType};
 
 struct Line {
     tokens: Vec<TokenType>,
@@ -15,46 +15,41 @@ struct Line {
 }
 
 pub struct Lexer {
-    dictionary: RadixTree<TokenType>,
+    dictionary: Dictionary,
 }
 
 impl Lexer {
     pub fn new() -> Lexer {
         return Lexer {
-            dictionary: token::new_dictionary(),
+            dictionary: Dictionary::new(),
         };
     }
 
     /// scan a source file, returning a stream of tokens
     pub fn scan_file(&mut self, path: String) -> Result<Vec<Token>> {
         let file = open_file(&path)?;
-        // let buffer = Predictor::new(&self.dictionary);
-        let mut buffer: Vec<char> = Vec::new();
         let mut line_buffer = Vec::<u8>::new();
         let mut tokens: Vec<Token> = Vec::<Token>::new();
         let mut line = 0;
         let mut is_comment = false;
         let mut is_string_literal = false;
+        let mut char_buffer: Vec<char> = Vec::new();
         let assert_push_buffer = |line: u32, col: u32| {
-            if !buffer.is_empty() {
-                self.dictionary.
-                let value = str::from_utf8(buffer.value()).unwrap().to_string();
-                if let Some(kind) = buffer.get_exact() {
-                    tokens.push(Token {
-                        kind,
-                        pos: token::Position { line, col },
-                    });
-                    buffer.reset();
-                } else if is_valid_identifier(&value) {
-                    tokens.push(Token {
-                        kind: TokenType::Identifier(value),
-                        pos: token::Position { line, col },
-                    });
-                    buffer.reset();
-                } else {
-                    return Err(LexerError {
-                        kind: ErrorKind::InvalidKeyword(value),
-                    });
+            if !char_buffer.is_empty() {
+                let value: String = char_buffer.iter().collect();
+                match self.dictionary.get(&value) {
+                    None => {
+                        return Err(LexerError {
+                            kind: ErrorKind::InvalidKeyword(value),
+                        })
+                    }
+                    Some(kind) => {
+                        tokens.push(Token {
+                            kind,
+                            pos: token::Position { line, col },
+                        });
+                        char_buffer.clear();
+                    }
                 }
             }
             return Ok(());
@@ -72,11 +67,11 @@ impl Lexer {
                 } else {
                     let buf: Vec<u8> = Vec::new();
                     c.encode_utf8(&mut Vec::new());
-                    buffer.add(&buf);
+                    char_buffer.add(&buf);
                 }
                 col += 1;
             }
-            if !buffer.is_empty() {
+            if !char_buffer.is_empty() {
                 assert_push_buffer(line, col)?;
             }
 
