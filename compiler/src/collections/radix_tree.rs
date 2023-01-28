@@ -26,46 +26,46 @@ impl<T> RadixTree<T> {
         self.insert_to_node(root_id, key, value);
     }
 
-    pub fn find(&self, key: Vec<u8>) -> Option<T> {
-        let mut current_node_id = self.root;
-        let mut index = 0;
-        'node_iterator: loop {
-            let current_node = &self.arena[current_node_id];
-            if key.len() == 0 {
-                self.current_match = matched_node_id;
-                if !current_node.value.is_none() {
-                    self.exact = true;
-                    self.next = None;
-                    return;
-                }
-            }
+    // pub fn find(&self, key: Vec<u8>) -> Option<T> {
+    //     let mut current_node_id = self.root;
+    //     let mut index = 0;
+    //     'node_iterator: loop {
+    //         let current_node = &self.arena[current_node_id];
+    //         if key.len() == 0 {
+    //             self.current_match = matched_node_id;
+    //             if !current_node.value.is_none() {
+    //                 self.exact = true;
+    //                 self.next = None;
+    //                 return;
+    //             }
+    //         }
 
-            for child_key in &current_node.children {
-                let child_node = &self.tree.arena[*child_key];
-                let common_prefix_count = find_common_prefix_count(&child_node.key, key);
-                if common_prefix_count > most_common_prefix_count {
-                    most_common_prefix_count = common_prefix_count;
-                    most_common_node_id = Some(*child_key);
-                }
+    //         for child_key in &current_node.children {
+    //             let child_node = &self.tree.arena[*child_key];
+    //             let common_prefix_count = find_common_prefix_count(&child_node.key, key);
+    //             if common_prefix_count > most_common_prefix_count {
+    //                 most_common_prefix_count = common_prefix_count;
+    //                 most_common_node_id = Some(*child_key);
+    //             }
 
-                // the input fully contains the child, proceed to the next node
-                if child_node.key.len() == most_common_prefix_count {
-                    self.index += child_node.key.len();
-                    self.path.push(*child_key);
-                    matched_node_id = *child_key;
-                    continue 'node_iterator;
-                }
-            }
+    //             // the input fully contains the child, proceed to the next node
+    //             if child_node.key.len() == most_common_prefix_count {
+    //                 self.index += child_node.key.len();
+    //                 self.path.push(*child_key);
+    //                 matched_node_id = *child_key;
+    //                 continue 'node_iterator;
+    //             }
+    //         }
 
-            // the input doesn't fully contains any of the current child
-            // we set the next node as the one with the highest common prefix
-            self.exact = false;
-            self.current_match = matched_node_id;
-            self.next = most_common_node_id;
-            break;
-        }
-        self.current_match = matched_node_id;
-    }
+    //         // the input doesn't fully contains any of the current child
+    //         // we set the next node as the one with the highest common prefix
+    //         self.exact = false;
+    //         self.current_match = matched_node_id;
+    //         self.next = most_common_node_id;
+    //         break;
+    //     }
+    //     self.current_match = matched_node_id;
+    // }
 
     /// find a node by key
     // fn find_node(&self, key: Vec<u8>) -> Option<&T> {
@@ -266,12 +266,12 @@ impl<'a, T> Predictor<'a, T> {
         self.exact
     }
 
-    pub fn get_exact(&self) -> Option<T> {
-        if self.exact {
-            return self.tree.arena[self.current_match].value;
-        }
-        return None;
-    }
+    // pub fn get_exact(&self) -> Option<&T> {
+    //     if self.exact {
+    //         return Some(&self.tree.arena[self.current_match].value.unwrap());
+    //     }
+    //     return None;
+    // }
 
     pub fn reset(&mut self) {
         self.current_match = self.tree.root;
@@ -286,7 +286,7 @@ impl<'a, T> Predictor<'a, T> {
         return self.key.len() == 0;
     }
 
-    pub fn value(&self) -> &Vec::<u8> {
+    pub fn value(&self) -> &Vec<u8> {
         return &self.key;
     }
 

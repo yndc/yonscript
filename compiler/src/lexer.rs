@@ -1,18 +1,12 @@
+use once_cell::sync::Lazy;
 use regex::Regex;
 use std::fs::File;
 use std::io::{self, BufRead};
-use std::str;
 use std::string::FromUtf8Error;
 use std::{fmt, fs};
 
-use crate::collections::radix_tree::{Predictor, RadixTree};
 use crate::token::{self, Token};
 use crate::token::{Dictionary, TokenType};
-
-struct Line {
-    tokens: Vec<TokenType>,
-    depth: usize,
-}
 
 pub struct Lexer {
     dictionary: Dictionary,
@@ -26,56 +20,128 @@ impl Lexer {
     }
 
     /// scan a source file, returning a stream of tokens
-    pub fn scan_file(&mut self, path: String) -> Result<Vec<Token>> {
-        let file = open_file(&path)?;
+    pub fn scan_file(&mut self, path: &String) -> Result<Vec<Token>> {
+        let mut file = open_file(path)?;
         let mut line_buffer = Vec::<u8>::new();
         let mut tokens: Vec<Token> = Vec::<Token>::new();
         let mut line = 0;
-        let mut is_comment = false;
-        let mut is_string_literal = false;
         let mut char_buffer: Vec<char> = Vec::new();
-        let assert_push_buffer = |line: u32, col: u32| {
+        let mut char_buffer_start: token::Position = token::Position { line: 0, col: 0 };
+        let mut string_literal_start: Option<token::Position> = None;
+        fn assert_push_buffer(
+            tokens: &mut Vec<Token>,
+            char_buffer: &mut Vec<char>,
+            char_buffer_start: &mut token::Position,
+            dictionary: &Dictionary,
+        ) -> Result<()> {
             if !char_buffer.is_empty() {
                 let value: String = char_buffer.iter().collect();
-                match self.dictionary.get(&value) {
+                match dictionary.get(&value) {
                     None => {
                         return Err(LexerError {
                             kind: ErrorKind::InvalidKeyword(value),
                         })
                     }
                     Some(kind) => {
-                        tokens.push(Token {
+                        tokens.push(Token::new(
                             kind,
-                            pos: token::Position { line, col },
-                        });
+                            char_buffer_start.line,
+                            char_buffer_start.col,
+                        ));
                         char_buffer.clear();
                     }
                 }
             }
             return Ok(());
-        };
+        }
 
         while file.read_until(b'\n', &mut line_buffer)? != 0 {
-            let s = String::from_utf8(line_buffer)?;
+            let line_string = String::from_utf8(line_buffer)?;
+            let mut line_chars = line_string.chars().peekable();
             let mut col = 0;
-            while let Some(c) = s.chars().next() {
-                // on empty whitespace or non-alphabetic symbols
-                // we asserts that the current buffer resolves to a valid token
-                // since there is no token that involves whitespace and/or non-alphabetic symbols
-                if c.is_whitespace() || !c.is_alphabetic() {
-                    assert_push_buffer(line, col)?;
+
+            // push the current level of indentation
+            let indent_level = self.dictionary.consume_indentation(&mut line_chars);
+            tokens.push(Token::new(TokenType::Indentation(indent_level), line, col));
+
+            while let Some(c) = line_chars.next() {
+                // we're currently inside a string literal
+                if let Some(start_pos) = string_literal_start {
+                    if self.dictionary.is_string_literal_opener(&c) {
+                        string_literal_start = None;
+                        tokens.push(Token::new(
+                            TokenType::LiteralString(char_buffer.iter().collect()),
+                            start_pos.line,
+                            start_pos.col,
+                        ));
+                        char_buffer.clear();
+                        char_buffer_start = token::Position { line, col }
+                    } else {
+                        char_buffer.push(c);
+                    }
                 } else {
-                    let buf: Vec<u8> = Vec::new();
-                    c.encode_utf8(&mut Vec::new());
-                    char_buffer.add(&buf);
+                    // on a breaker character we asserts that the current buffer resolves to a valid token
+                    if self.dictionary.is_breaker(&c) {
+                        assert_push_buffer(
+                            &mut tokens,
+                            &mut char_buffer,
+                            &mut char_buffer_start,
+                            &self.dictionary,
+                        )?;
+                    }
+
+                    // if we found a string literal opener, start reading into the string literal buffer
+                    if self.dictionary.is_string_literal_opener(&c) {
+                        string_literal_start = Some(token::Position { line, col });
+                    }
+                    // if we found a comment opener character, push the rest as a comment
+                    else if self.dictionary.is_comment_opener(&c) {
+                        let mut comment_str = Vec::new();
+                        while let Some(c) = line_chars.next() {
+                            comment_str.push(c);
+                        }
+                        if comment_str.len() > 0 {
+                            tokens.push(Token::new(
+                                TokenType::Comment(comment_str.into_iter().collect()),
+                                line,
+                                col,
+                            ));
+                        }
+                        break;
+                    } else if !self.dictionary.is_ignore(&c) {
+                        if char_buffer.len() == 0 {
+                            char_buffer_start = token::Position { line, col }
+                        }
+                        char_buffer.push(c);
+                    }
+
+                    // try resolving the current buffer
+                    if !char_buffer.is_empty() {
+                        if let Some(kind) = self.dictionary.get_exact(&char_buffer.iter().collect())
+                        {
+                            tokens.push(Token::new(
+                                kind,
+                                char_buffer_start.line,
+                                char_buffer_start.col,
+                            ));
+                            char_buffer.clear();
+                        }
+                    }
                 }
+
                 col += 1;
             }
+
             if !char_buffer.is_empty() {
-                assert_push_buffer(line, col)?;
+                assert_push_buffer(
+                    &mut tokens,
+                    &mut char_buffer,
+                    &mut char_buffer_start,
+                    &self.dictionary,
+                )?;
             }
 
-            line_buffer = s.into_bytes();
+            line_buffer = line_string.into_bytes();
             line_buffer.clear();
             line += 1;
         }
@@ -112,7 +178,7 @@ impl From<FromUtf8Error> for LexerError {
 
 impl fmt::Display for LexerError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.kind {
+        match &self.kind {
             ErrorKind::InvalidIdentifier(identifier) => {
                 write!(f, "invalid identifier: {}", identifier)
             }
@@ -129,23 +195,11 @@ impl fmt::Display for LexerError {
 fn open_file(path: &String) -> Result<io::BufReader<fs::File>> {
     let file = match File::open(path) {
         Ok(f) => f,
-        Err(err) => {
+        Err(_) => {
             return Err(LexerError {
                 kind: ErrorKind::InvalidFile(path.clone()),
             })
         }
     };
     Ok(io::BufReader::new(file))
-}
-
-/// test if the given string is a valid identifier
-fn is_valid_identifier(str: &String) -> bool {
-    static PATTERN: Regex = Regex::new(r"^[a-zA-Z][_a-zA-Z0-9]{0, 30}$").unwrap();
-    return PATTERN.is_match(str);
-}
-
-/// test if the given string is a string literal
-fn is_string_literal(str: &String) -> bool {
-    static PATTERN: Regex = Regex::new(r"^[a-zA-Z][_a-zA-Z0-9]{0, 30}$").unwrap();
-    return PATTERN.is_match(str);
 }

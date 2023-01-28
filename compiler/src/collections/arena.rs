@@ -1,4 +1,4 @@
-use std::{io::Read, mem, ops::{Index, IndexMut}};
+use std::{mem, ops::{Index, IndexMut}};
 
 #[derive(Debug)]
 pub struct Arena<T> {

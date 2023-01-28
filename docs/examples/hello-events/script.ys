@@ -1,6 +1,6 @@
 use IO
 
-print "Hello, events!"
+print 'Hello, events!'
 
 # Define the message data
 event Payload 
@@ -11,7 +11,7 @@ event Payload
 system Formatter 
     mutates event Message
     (event) => 
-        event.message = `{event.sender} says {event.message}`
+        event.message = '{event.sender} says {event.message}'
 
 # Write a system that prints out the message to console
 system Printer
@@ -20,7 +20,7 @@ system Printer
         emit IO.Print event.message
 
 # Emit events using the `emit` keyword
-emit Message { message: "hello!", sender: "yonder" }    # Will print "yonder says hello!"
-emit Message { message: "world!", sender: "yonder" }    # Will print "yonder says world!"
-emit Message { message: "hi!", sender: "socks" }        # Will print "socks says hi!"
-emit Message { message: "bye!", sender: "evan" }        # Will print "evan says bye!"
+emit Message { message: 'hello!', sender: 'yonder' }    # Will print 'yonder says hello!'
+emit Message { message: 'world!', sender: 'yonder' }    # Will print 'yonder says world!'
+emit Message { message: 'hi!', sender: 'socks' }        # Will print 'socks says hi!'
+emit Message { message: 'bye!', sender: 'evan' }        # Will print 'evan says bye!'

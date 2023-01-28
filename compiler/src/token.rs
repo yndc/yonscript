@@ -1,17 +1,25 @@
-use std::{collections::HashMap, mem, ops::Index};
+use std::{
+    collections::{HashMap, HashSet},
+    iter::Peekable,
+    mem,
+    str::Chars,
+};
 
 use regex::Regex;
 
-use crate::collections::{self, radix_tree::RadixTree};
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TokenType {
     Colon,
     Semicolon,
+    Dot,
     Plus,
     Minus,
+    Equal,
     Asterisk,
+    Lambda,
     ForwardSlash,
+    ParanthesisOpen,
+    ParanthesisClose,
     If,
     Continue,
     For,
@@ -26,18 +34,34 @@ pub enum TokenType {
     Const,
     Function,
     Event,
+    Emit,
     System,
+    Use,
     Identifier(String),
+    LiteralString(String),
+    Comment(String),
+    Indentation(usize),
 }
 
+#[derive(Debug)]
 pub struct Token {
     kind: TokenType,
     pos: Position,
 }
 
+impl Token {
+    pub fn new(kind: TokenType, line: u32, col: u32) -> Token {
+        return Token {
+            kind,
+            pos: Position { line, col },
+        };
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
 pub struct Position {
-    line: u32,
-    col: u32,
+    pub line: u32,
+    pub col: u32,
 }
 
 pub struct RegexMap<T> {
@@ -61,16 +85,16 @@ impl<T> RegexMap<T> {
                 return Some(mem::replace(&mut self.values[i], value));
             }
         }
-        self.patterns.push(pattern);
-        self.regexes.push(Regex::new(&pattern).unwrap());
         self.values.push(value);
+        self.regexes.push(Regex::new(&pattern).unwrap());
+        self.patterns.push(pattern);
         return None;
     }
 
-    pub fn get(&self, value: &String) -> Option<T> {
+    pub fn get(&self, value: &String) -> Option<&T> {
         for (i, r) in self.regexes.iter().enumerate() {
             if r.is_match(&value) {
-                return Some(self.values[i]);
+                return Some(&self.values[i]);
             }
         }
         return None;
@@ -80,20 +104,41 @@ impl<T> RegexMap<T> {
 pub struct Dictionary {
     patterns: RegexMap<fn(&String) -> TokenType>,
     exact: HashMap<String, TokenType>,
+    breakers: HashSet<char>,
 }
 
 impl Dictionary {
     pub fn new() -> Dictionary {
-        let d = Dictionary {
+        let mut d = Dictionary {
             patterns: RegexMap::new(),
             exact: HashMap::new(),
+            breakers: HashSet::new(),
         };
 
+        d.breakers.insert(' ');
+        d.breakers.insert('\n');
+        d.breakers.insert('\r');
+        d.breakers.insert('\t');
+        d.breakers.insert('(');
+        d.breakers.insert(')');
+        d.breakers.insert(':');
+        d.breakers.insert(';');
+        d.breakers.insert('+');
+        d.breakers.insert('-');
+        d.breakers.insert('*');
+        d.breakers.insert('/');
+        d.breakers.insert('#');
+        d.breakers.insert('.');
         d.exact.insert(":".to_string(), TokenType::Colon);
         d.exact.insert(";".to_string(), TokenType::Semicolon);
+        d.exact.insert(".".to_string(), TokenType::Dot);
         d.exact.insert("+".to_string(), TokenType::Plus);
         d.exact.insert("-".to_string(), TokenType::Minus);
         d.exact.insert("*".to_string(), TokenType::Asterisk);
+        d.exact.insert("=".to_string(), TokenType::Equal);
+        d.exact.insert("=>".to_string(), TokenType::Lambda);
+        d.exact.insert("(".to_string(), TokenType::ParanthesisOpen);
+        d.exact.insert(")".to_string(), TokenType::ParanthesisClose);
         d.exact.insert("/".to_string(), TokenType::ForwardSlash);
         d.exact.insert("if".to_string(), TokenType::If);
         d.exact.insert("continue".to_string(), TokenType::Continue);
@@ -109,7 +154,9 @@ impl Dictionary {
         d.exact.insert("const".to_string(), TokenType::Const);
         d.exact.insert("function".to_string(), TokenType::Function);
         d.exact.insert("event".to_string(), TokenType::Event);
+        d.exact.insert("emit".to_string(), TokenType::Emit);
         d.exact.insert("system".to_string(), TokenType::System);
+        d.exact.insert("use".to_string(), TokenType::Use);
         d.patterns
             .insert(r"^[a-zA-Z][_a-zA-Z0-9]{0, 30}$".to_string(), |value| {
                 TokenType::Identifier(value.to_string())
@@ -119,34 +166,52 @@ impl Dictionary {
     }
 
     pub fn get(&self, index: &String) -> Option<TokenType> {
-        match self.exact.get(index) {
-            None => {
-                return match self.patterns.get(index) {
-                    None => &None,
-                    Some(v) => &Some(v(index)),
-                }
-            }
-            Some(v) => {
-                return &Some(*v.clone());
-            }
+        match self.get_exact(index) {
+            Some(v) => Some(v),
+            None => self.get_pattern(index),
         }
     }
-}
 
-impl Index<&String> for Dictionary {
-    type Output = Option<TokenType>;
+    pub fn get_exact(&self, index: &String) -> Option<TokenType> {
+        return match self.exact.get(index) {
+            Some(v) => Some(v.clone()),
+            None => None,
+        };
+    }
 
-    fn index(&self, index: &String) -> &Self::Output {
-        match self.exact.get(index) {
-            None => {
-                return match self.patterns.get(index) {
-                    None => &None,
-                    Some(v) => &Some(v(index)),
-                }
+    pub fn get_pattern(&self, index: &String) -> Option<TokenType> {
+        return match self.patterns.get(index) {
+            Some(v) => Some(v(index)),
+            None => None,
+        };
+    }
+
+    pub fn is_breaker(&self, c: &char) -> bool {
+        // return self.breakers.contains(c);
+        return !c.is_alphanumeric();
+    }
+
+    pub fn is_comment_opener(&self, c: &char) -> bool {
+        return *c == '#';
+    }
+
+    pub fn is_string_literal_opener(&self, c: &char) -> bool {
+        return *c == '\'';
+    }
+
+    pub fn consume_indentation(&self, chars: &mut Peekable<Chars>) -> usize {
+        let mut indentation: usize = 0;
+        while let Some(c) = chars.peek() {
+            if *c != '\t' {
+                break;
             }
-            Some(v) => {
-                return &Some(*v.clone());
-            }
+            indentation += 1;
+            chars.next();
         }
+        return indentation;
+    }
+
+    pub fn is_ignore(&self, c: &char) -> bool {
+        return c.is_whitespace();
     }
 }

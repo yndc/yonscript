@@ -1,17 +1,18 @@
-use crate::{file::read_file, lexer::Lexer};
-use std::{fs, io};
+use crate::lexer::Lexer;
+use std;
 
 mod collections;
 mod dictionary;
-mod file;
 mod lexer;
 mod token;
 
 fn main() {
-    let args: Vec<String> = std::env::args().collect();
-    let mut entry_file = read_file(&args[1]).unwrap();
     let mut lexer = Lexer::new();
-    let result: Result<Vec<token::TokenType>, lexer::LexerError> = lexer.scan(&mut entry_file);
+
+    // let args: Vec<String> = std::env::args().collect();
+    // let result = lexer.scan_file(&args[1]);
+
+    let result = lexer.scan_file(&"../docs/examples/hello-events/script.ys".to_string());
     dbg!(result.unwrap());
     // let mut symbols = collections::radix_tree::RadixTree::new();
     // symbols.insert("test".as_bytes().to_vec(), 1);
