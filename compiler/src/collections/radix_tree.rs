@@ -223,11 +223,11 @@ where
 pub struct Predictor<'a, T> {
     tree: &'a RadixTree<T>,
     current_match: ID,
-    next: Option<ID>,
-    key: Vec<u8>,
-    path: Vec<ID>,
-    exact: bool,
-    index: usize,
+    next: Option<ID>, // the closes node AFTER the current one with the best match
+    key: Vec<u8>,     // the current stored key in the predictor
+    path: Vec<ID>,    // traversed path of the predictor
+    exact: bool,      // mark if the current key has an exact match
+    last_updated_index: usize,     // mark the current index of the key
 }
 
 impl<'a, T> Predictor<'a, T> {
@@ -239,7 +239,7 @@ impl<'a, T> Predictor<'a, T> {
             key: Vec::new(),
             exact: false,
             path: Vec::new(),
-            index: 0,
+            last_updated_index: 0,
         }
     }
 
@@ -266,12 +266,16 @@ impl<'a, T> Predictor<'a, T> {
         self.exact
     }
 
-    // pub fn get_exact(&self) -> Option<&T> {
-    //     if self.exact {
-    //         return Some(&self.tree.arena[self.current_match].value.unwrap());
-    //     }
-    //     return None;
-    // }
+    pub fn has_next(&self) -> bool {
+        return self.next.is_some();
+    }
+
+    pub fn get_exact(&self) -> Option<&T> {
+        if self.exact {
+            return Some(&self.tree.arena[self.current_match].value.as_ref().unwrap());
+        }
+        return None;
+    }
 
     pub fn reset(&mut self) {
         self.current_match = self.tree.root;
@@ -279,7 +283,7 @@ impl<'a, T> Predictor<'a, T> {
         self.key = Vec::new();
         self.path = Vec::new();
         self.exact = false;
-        self.index = 0;
+        self.last_updated_index = 0;
     }
 
     pub fn is_empty(&self) -> bool {
@@ -297,13 +301,13 @@ impl<'a, T> Predictor<'a, T> {
         let mut current_node;
         'node_iterator: loop {
             current_node = &self.tree.arena[matched_node_id];
-            let key = &self.key[self.index..];
+            let key = &self.key[self.last_updated_index..];
             most_common_node_id = None;
 
             // exact match with the current node
             if key.len() == 0 {
                 self.current_match = matched_node_id;
-                if !current_node.value.is_none() {
+                if current_node.value.is_some() {
                     self.exact = true;
                     self.next = None;
                     return;
@@ -320,7 +324,7 @@ impl<'a, T> Predictor<'a, T> {
 
                 // the input fully contains the child, proceed to the next node
                 if child_node.key.len() == most_common_prefix_count {
-                    self.index += child_node.key.len();
+                    self.last_updated_index += child_node.key.len();
                     self.path.push(*child_key);
                     matched_node_id = *child_key;
                     continue 'node_iterator;
